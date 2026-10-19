@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Chakra+Petch:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="cosmos" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="brand">Trade Order</div>
+  <div class="controls">
+    <select id="symbolSelect" aria-label="Монета">
+      <option value="ETHEUR">ETH / EUR</option><option value="BTCEUR">BTC / EUR</option>
+      <option value="SOLEUR">SOL / EUR</option><option value="XRPEUR">XRP / EUR</option>
+    </select>
+    <div class="seg">
+      <button class="tf-btn active" data-tf="1m">1m</button><button class="tf-btn" data-tf="5m">5m</button>
+      <button class="tf-btn" data-tf="15m">15m</button><button class="tf-btn" data-tf="30m">30m</button>
+      <button class="tf-btn" data-tf="1h">1h</button><button class="tf-btn" data-tf="4h">4h</button>
+    </div>
+    <div class="seg"><button id="langBgBtn" class="lang-btn active">BG</button><button id="langEnBtn" class="lang-btn">EN</button></div>
+    <button id="ordersBtn" class="help-btn orders-btn" data-t="t_orders" data-tipcls="tip-r"><span data-i="orders">Поръчки</span> <b id="ordersCount">0</b></button>
+    <button id="helpBtn" class="help-btn" data-i="help" data-t="t_help" data-tipcls="tip-r">? Помощник</button>
+  </div>
+</header>
+
+<section class="terminal" id="terminal">
+<div class="layout">
+  <main class="glass chart-card reveal">
+    <div class="price-bar">
+      <div class="pb-left"><div class="price-info" data-t="t_price">
+        <span id="currentSymbol" class="symbol">ETH/EUR</span>
+        <span id="currentPrice" class="price">0,00 €</span>
+        <span id="priceChange" class="change up">+0,00%</span>
+        <span id="sigPill" class="sig-pill hold" data-t="t_pill"></span>
+        <span id="candleTimer" class="ctimer" data-t="t_timer"></span>
+      </div>
+        </div>
+      <div class="stats">
+        <div id="avgStat" class="avgstat" data-t="t_avg" hidden><span data-i="avgShort">Средна цена</span><b id="stAvg">--</b><small id="avgGap"></small></div>
+        <div data-t="t_high"><span data-i="high">Най-висока</span><b id="stHigh">--</b></div>
+        <div data-t="t_low"><span data-i="low">Най-ниска</span><b id="stLow">--</b></div>
+        <div data-t="t_vol"><span data-i="vol">Търгувано</span><b id="stVol">--</b></div>
+        <div class="live" id="liveBadge" data-t="t_live" data-tipcls="tip-r"><i class="dot"></i><span data-i="live">НА ЖИВО</span></div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div id="legend" class="legend"></div>
+      <div class="zoom">
+        <button id="selToggle" class="seltoggle" data-i="selBtn" data-t="t_select" data-tipcls="tip-r">Избери диапазон</button>
+        <button id="zIn" data-t="t_zin" data-tipcls="tip-r">+</button>
+        <button id="zOut" data-t="t_zout" data-tipcls="tip-r">−</button>
+        <button id="zReset" data-t="t_zreset" data-tipcls="tip-r">⟲</button>
+      </div>
+      <div id="chartContainer" class="chart-container"></div>
+      <div id="selBox" class="selbox" hidden></div>
+      <div id="rangeCard" class="rangecard glass" hidden>
+        <button id="rangeClose" class="help-x" aria-label="Затвори">×</button>
+        <div id="rangeBody"></div>
+      </div>
+    </div>
+    <div class="periods">
+      <button class="per-btn" data-per="1d" data-i="p1d" data-t="t_p1d" data-tipcls="tip-up">1Д</button>
+      <button class="per-btn" data-per="1w" data-i="p1w" data-t="t_p1w" data-tipcls="tip-up">1С</button>
+      <button class="per-btn" data-per="1m" data-i="p1m" data-t="t_p1m" data-tipcls="tip-up">1М</button>
+      <button class="per-btn" data-per="3m" data-i="p3m" data-t="t_p3m" data-tipcls="tip-up">3М</button>
+      <button class="per-btn" data-per="1y" data-i="p1y" data-t="t_p1y" data-tipcls="tip-up">1Г</button>
+      <button class="per-btn" data-per="max" data-i="pmax" data-t="t_pmax" data-tipcls="tip-up tip-r">MAX</button>
+    </div>
+    <div class="chips">
+      <span class="chips-title" data-i="onChart">Показвай на графиката:</span>
+      <button class="chip on" data-ind="sigs" data-t="t_sigs" data-tipcls="tip-up"><i style="background:#22c55e"></i><span data-i="sigsChip">Сигнали КУПИ/ПРОДАЙ</span></button>
+      <button class="chip" data-ind="ema20" data-t="t_ema20" data-tipcls="tip-up"><i style="background:#fcd34d"></i><span data-i="ema20">Средна цена 20</span></button>
+      <button class="chip" data-ind="ema50" data-t="t_ema50" data-tipcls="tip-up"><i style="background:#93c5fd"></i><span data-i="ema50">Средна цена 50</span></button>
+      <button class="chip" data-ind="bb" data-t="t_bb" data-tipcls="tip-up"><i style="background:#c4b5fd"></i><span data-i="bb">Ценови коридор</span></button>
+      <button class="chip" data-ind="sig" data-t="t_sig" data-tipcls="tip-up"><i style="background:#fff"></i><span data-i="sig">Стрелки-сигнали</span></button>
+      <button class="chip" data-ind="vol" data-t="t_vchip" data-tipcls="tip-up"><i style="background:#22c55e"></i><span data-i="volchip">Обем</span></button>
+    </div>
+  </main>
+
+  <aside class="side">
+    <div class="side-tabs" id="sideTabs"><button type="button" data-v="signal" class="on" data-i="tabSig">Сигнал</button><button type="button" data-v="trade" data-i="tabTrade">Търговия</button><button type="button" data-v="hist" data-i="tabHist">История</button></div>
+    <div class="pane" data-pane="signal">
+    <section class="glass card signal-card">
+      <div class="sig-head"><h3 data-i="sensor" data-t="t_sensor">Сигнал</h3>
+        <label class="switch" data-t="t_notify" data-tipcls="tip-r"><input type="checkbox" id="notifyOn"><span data-i="notify">Известия</span></label></div>
+      <div id="signalStatus" class="signal hold"><span id="signalText">ИЗЧАКАЙ</span><small id="sigScore"></small></div>
+      <div class="meter" data-t="t_score"><i id="sigMeter"></i></div>
+      <p id="signalReason" class="reason">Анализирам графиките…</p>
+      <div class="tfrow" id="tfRow"></div>
+      <ul class="why" id="sigWhy"></ul>
+      <div class="levels" id="sigLevels"></div>
+      <p class="bt" id="sigBt"></p>
+      <p class="disc" data-i="disc">Статистически сигнал от индикаторите на графиката – не е гарантирана прогноза и не е финансов съвет.</p>
+    </section>
+    <section class="glass card">
+      <h3 data-i="indic">Индикатори</h3>
+      <div class="row" data-t="t_rsi"><span data-i="rsi">RSI – сила на пазара</span><b id="rsiValue">--</b></div>
+      <div class="rsi-bar"><i id="rsiFill"></i></div>
+      <div class="row" data-t="t_emaV"><span data-i="emaV">Средни цени (20 / 50)</span><b id="emaValue">--</b></div>
+      <div class="row" data-t="t_eng"><span data-i="eng">Формация „поглъщане“</span><b id="engulfingValue">Няма</b></div>
+    </section>
+    </div>
+    <div class="pane" data-pane="trade" hidden>
+    <section class="glass card">
+      <h3 data-i="wallet" data-t="t_wallet">Портфейл</h3>
+      <div class="hero-num" id="pfValue">--</div>
+      <div class="hero-sub" id="pfRet"></div>
+      <div class="kv">
+        <div data-t="t_cash"><span data-i="cash">Налични EUR</span><b id="cashValue">--</b></div>
+        <div data-t="t_inv"><span data-i="inCoins">В монети</span><b id="coinsValue">--</b></div>
+      </div>
+      <div class="dep-row">
+        <input id="depIn" type="number" min="0" step="any" placeholder="10">
+        <button id="btnDep" class="ghost" data-i="deposit" data-t="t_dep">Депозит</button>
+        <button id="btnWd" class="ghost" data-i="withdraw" data-t="t_wd" data-tipcls="tip-r">Теглене</button>
+      </div>
+      <p id="wdMsg" class="preview"></p>
+      <div class="quick"><button id="depAll" data-i="allCash">Всичко налично</button><button id="btnReset2" class="danger" data-i="resetShort">Ресет</button></div>
+    </section>
+    <section class="glass card">
+      <h3 data-i="newTrade">Нова сделка</h3>
+      <div class="seg2" id="sideSeg"><button type="button" data-v="buy" class="on buyc" data-i="sideBuy">Купи</button><button type="button" data-v="sell" class="sellc" data-i="sideSell">Продай</button></div>
+      <div class="seg2 small" id="modeSeg"><button type="button" data-v="amount" class="on" data-i="modeAmt">Сума (€)</button><button type="button" data-v="units" data-i="modeUnits">Монети</button></div>
+      <div class="seg2 small" id="typeSeg"><button type="button" data-v="market" class="on" data-i="typeMarket" data-t="t_type">Сега</button><button type="button" data-v="limit" data-i="typeLimit" data-t="t_limit">При цена</button></div>
+      <label class="fld"><span id="amtLabel">Сума за покупка (€)</span><input id="amountIn" type="number" min="0" step="any" placeholder="10"></label>
+      <div class="quick"><button data-pct="25">25%</button><button data-pct="50">50%</button><button data-pct="100" data-i="all">Всичко</button></div>
+      <div id="feeWrap"><label class="fld" data-t="t_fee"><span data-i="fee">Такса (€)</span><input id="feeIn" type="number" min="0" step="any" placeholder="0"></label>
+      <div class="quick"><span class="quick-l" data-i="feePreset">Бърза такса:</span><button data-fee="0.25">0,25%</button><button data-fee="0.4">0,40%</button></div></div>
+      <label class="check" id="manualRow" data-t="t_manual"><input type="checkbox" id="manualOn"><span data-i="manual">Ръчна цена и час (от историята на Kraken)</span></label>
+      <div id="manualBox" class="manual" hidden>
+        <label class="fld" data-t="t_mPrice"><span data-i="mPrice">Изпълнена цена (€)</span><input id="mPrice" type="number" min="0" step="any"></label>
+        <label class="fld" data-t="t_mDate"><span data-i="mDate">Дата и час (българско време)</span><input id="mDate" type="datetime-local" step="1"></label>
+      </div>
+      <label class="fld" id="limitBox" data-t="t_limitPrice" hidden><span data-i="limitPrice">Цена на изпълнение (€)</span><input id="limitPrice" type="number" min="0" step="any"></label>
+      <p id="preview" class="preview"></p>
+      <button id="btnTrade" class="btn buy big">Купи</button>
+    </section>
+    <section class="glass card">
+      <h3><span id="posTitle">Позиция</span></h3>
+      <div id="pos"></div>
+      <div id="guard" class="guard" hidden>
+        <div class="guard-t" data-i="guard" data-t="t_guard">Защита на позицията</div>
+        <label class="fld"><span data-i="gStop">Стоп загуба (€)</span><input id="gStop" type="number" min="0" step="any"></label>
+        <label class="fld"><span data-i="gTp">Вземи печалба (€)</span><input id="gTp" type="number" min="0" step="any"></label>
+        <div class="quick"><button id="gAuto" data-t="t_gAuto" data-i="gAuto">Препоръчани</button><button id="gSet" data-i="gSet">Постави</button></div>
+        <p id="guardNote" class="preview"></p>
+      </div>
+    </section>
+    </div>
+    <div class="pane" data-pane="hist" hidden>
+    <section class="glass card">
+      <h3 data-i="hist" data-t="t_hist">История</h3>
+      <div class="hist-actions"><button id="btnReset" class="ghost danger" data-i="resetAll">Нулирай портфейла</button></div>
+      <div id="history" class="hist"></div>
+    </section>
+    </div>
+  </aside>
+</div>
+</section>
+
+<aside id="ordersDrawer" class="drawer glass" hidden>
+  <div class="drawer-head"><h2 data-i="ordersT">Моите поръчки</h2><button id="drawerClose" class="help-x" aria-label="Затвори">×</button></div>
+  <div class="seg2 tabs" id="ordTabs"><button type="button" data-v="pos" class="on" data-i="tabPos">Позиции</button><button type="button" data-v="pend" data-i="tabPend">Чакащи</button><button type="button" data-v="done" data-i="tabDone">История</button></div>
+  <div id="ordBody" class="ord-body"></div>
+  <label class="fld ord-foot" data-t="t_autoFee"><span data-i="autoFee">Такса за автоматични поръчки (%)</span><input id="autoFee" type="number" min="0" step="any"></label>
+</aside>
+<div id="toast" class="toast" hidden></div>
+<div id="help" class="help" hidden>
+  <div class="glass help-card"><button id="helpClose" class="help-x" aria-label="Затвори">×</button><div id="helpBody"></div></div>
+</div>
+<script src="cosmos.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
